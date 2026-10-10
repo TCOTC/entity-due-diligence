@@ -11,8 +11,24 @@
 | `api.vxtwitter.com/<user>/status/<id>` | ⚠️ | 独立第二源，字段略有差异。**本次实测曾返回 403**，脚本会降级为单源 |
 | 时间戳反解 | ✅ | `ts = (id >> 22) + 1288834974657`（毫秒），与 `created_at` 比对 |
 | 附件图 `pbs.twimg.com/media/<file>?name=orig` | ✅ | `Invoke-WebRequest` 下载后用 `read_image` 直读。**关键宣称常在图内** |
+| `cdn.syndication.twimg.com/tweet-result` | ✅ | 无登录直取单条推文 JSON。需算 token：`((id / 1e15) * PI)` 转 36 进制后去掉 0 与小数点 |
 
 **注意**：镜像 API 的互动数是快照，两源会有小差异（本次 404 vs 423 赞），属正常。
+
+### 会话与回复：目前没有可用入口（实测）
+
+需要「帖主在回复里说了什么」时，以下路径全部试过且不可用：
+
+| 尝试 | 结果 |
+|---|---|
+| fxtwitter `/replies`、`/conversation`、`/thread` | 返回与单条推文**完全相同**的 payload——子路径被忽略，不是会话数据 |
+| Nitter 实例（12 个） | 全部不可用：Anubis 工作量证明、403 / 404 / 429 / 451 / 502 / 503、TLS 失败、超时 |
+| threadreaderapp | 页面可达，但需先有人 unroll，否则无正文 |
+| twstalker、sotwe、r.jina.ai（含对 Nitter 的代理） | 403 |
+| syndication `timeline-profile/screen-name/<user>` | 可用，但返回**冻结快照**（实测为两年前的旧数据，破缓存无效），不含近期推文 |
+| Wayback CDX | 该推文无快照 |
+
+**结论：回复内容只能由人提供**——粘贴文本，或保存页面后放入工作区再解析。**不要用「网友大概会问什么」这类推测填充回复内容**，那是把未取证内容写进报告。
 
 ## 2. 主体官方一手源
 
